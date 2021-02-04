@@ -31,7 +31,7 @@ LOGDIR = 'C:\\amiCOM\\Logs.txt'
 
 open(LOGDIR, 'w').close() # Clear log file while first load
 
-logging.basicConfig(filename=LOGDIR, level=logging.debug, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(filename=LOGDIR, level=logging.debug, format='%(asctime)s - %(levelname)s - %(message)s')
 AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
 
@@ -78,7 +78,7 @@ def Backfill():
         interval_length = '1d'
 
     s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
-    e_date =  datetime.datetime.now()
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
     end_date = e_date.strftime("%Y-%m-%d")
@@ -127,7 +127,7 @@ def Import():
         interval_length = '1d'
 
     s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
-    e_date =  datetime.datetime.now()
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
     end_date = e_date.strftime("%Y-%m-%d")
@@ -172,7 +172,7 @@ def QuickImport():
         interval_length = '1d'
 
     s_date = datetime.datetime.now()-datetime.timedelta(days = 1)
-    e_date =  datetime.datetime.now()
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
     end_date = e_date.strftime("%Y-%m-%d")
@@ -212,7 +212,7 @@ def ImportCur():
         interval_length = '1d'
 
     s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
-    e_date =  datetime.datetime.now()
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
     end_date = e_date.strftime("%Y-%m-%d")
@@ -239,6 +239,7 @@ def ImportCur():
 
 
 def RT(lClose):
+    return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
     path =TempFile
     open(path, 'w').close()
     global lastClose
@@ -345,6 +346,7 @@ while True:
         RT(lastClose)
     daysToFill = daystofill.get()
     if (datetime.datetime.utcnow().hour > 9 and datetime.datetime.utcnow().hour < 16 ):
+        print("Updating selected DB")
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             QuickImport()
             nextfill = time.time()+30
