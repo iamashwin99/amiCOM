@@ -323,21 +323,36 @@ B1.pack()
 B2 = Button(top, text="Backfill current", command=ImportCur)
 B2.pack()
 
-
-L4 = Label(top, text=" Update Settings \n Update Frequenc:")
+L4 = Label(top, text="Auto Update Settings")
 L4.pack()
+
+isupdate = IntVar() # Auto update or not
+isupdate.set(1)
+C0 = Checkbutton(top, text="Auto Update DB", variable=isupdate, \
+                 onvalue=1, offvalue=0, \
+                 width=20)
+
+C0.pack()
+
+
+L5 = Label(top, text="Update Frequenc:")
+L5.pack()
+
 refreshrate = StringVar(top) #refresh rate 2 min 5min or 1hr
 refreshrate.set("2min") # default value
 refreshrateMenu = OptionMenu(top, refreshrate,"30sec" ,"2min", "5min", "1hr")
 refreshrateMenu.pack()
 
+
 isRT = IntVar() # realtime or not
 isRT.set(0)
+
 C1 = Checkbutton(top, text="Real time", variable=isRT, \
-                 onvalue=1, offvalue=0, height=5, \
+                 onvalue=1, offvalue=0, \
                  width=20)
 
 C1.pack()
+
 
 
 B3 = Button(top, text="Exit", command=CloseAmi)
@@ -351,7 +366,7 @@ while True:
     if isRT.get() == 1:
         RT(lastClose)
     daysToFill = daystofill.get()
-    if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 ):
+    if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 and isupdate.get()==1 ):
         
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             logging.warning("Updating selected DB")
