@@ -11,7 +11,7 @@ import time
 import pandas as pd
 import yfinance as yf
 import logging
-
+import tkinter.messagebox as tkMessageBox
 #from methods import *
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
@@ -280,11 +280,13 @@ def RT(lClose):
             # print(asking_time,asking_open,asking_close)
             # AmiBroker.RefreshAll()
 
+    
 
 def CloseAmi():
     AmiBroker.RefreshAll()
     AmiBroker.SaveDatabase()
-    exit()
+    if tkMessageBox.askokcancel("Quit", "You want to quit now? *sniff*"):
+        top.destroy()
 
 
 
@@ -293,6 +295,7 @@ def CloseAmi():
 # Main...        
 top = tkinter.Tk()
 top.title("AmiCOM")
+top.protocol("WM_DELETE_WINDOW", CloseAmi)
 
 L1 = Label(top, text=" DB Settings")
 L1.pack()
@@ -341,7 +344,8 @@ B3 = Button(top, text="Exit", command=CloseAmi)
 B3.pack()
 
 
-nextfill = time.time()
+nextfill = time.time() 
+
 currentDB = "NIFTY50"
 while True:
     if isRT.get() == 1:
