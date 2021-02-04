@@ -31,6 +31,8 @@ LOGDIR = 'C:\\amiCOM\\Logs.txt'
 
 open(LOGDIR, 'w').close() # Clear log file while first load
 
+
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 #logging.basicConfig(filename=LOGDIR, level=logging.debug, format='%(asctime)s - %(levelname)s - %(message)s')
 AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
@@ -346,21 +348,26 @@ while True:
         RT(lastClose)
     daysToFill = daystofill.get()
     if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 ):
-        print("Updating selected DB")
+        
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
-            QuickImport()
+            logging.warning("Updating selected DB")
             nextfill = time.time()+30
+            QuickImport()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
-            QuickImport()
+            logging.warning("Updating selected DB")
             nextfill = time.time()+2*60
+            QuickImport()
 
         elif(refreshrate.get()=="5min" and time.time()>nextfill):
-            QuickImport()
+            logging.warning("Updating selected DB")
             nextfill = time.time()+5*60
-        elif(refreshrate.get()=="2min" and time.time()>nextfill):
             QuickImport()
+
+        elif(refreshrate.get()=="2min" and time.time()>nextfill):
+            logging.warning("Updating selected DB")
             nextfill = time.time()+60*60
+            QuickImport()
 
 
     if(currentDB!=DB.get()):  ### Check if DB has changed
