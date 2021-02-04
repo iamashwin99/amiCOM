@@ -345,7 +345,7 @@ while True:
     if isRT.get() == 1:
         RT(lastClose)
     daysToFill = daystofill.get()
-    if (datetime.datetime.utcnow().hour > 9 and datetime.datetime.utcnow().hour < 16 ):
+    if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 ):
         print("Updating selected DB")
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             QuickImport()
