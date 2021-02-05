@@ -12,7 +12,8 @@ import pandas as pd
 import yfinance as yf
 import logging
 import tkinter.messagebox as tkMessageBox
-#from methods import *
+
+
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
 NIFTY50DB = 'C:\\amiCOM\\DB\\NIFTY50'
@@ -248,44 +249,42 @@ def RT(lClose):
     continous = 0
 
     inst = AmiBroker.ActiveDocument.Name
-    response = oanda.get_history(instrument=inst, count="2", granularity="D", candleFormat="midpoint")
-    prices = response.get("candles")
+    #Some how get data from yliveticker and then do the following
 
-    for count in range(1, len(prices)):
-        asking_time = prices[count].get("time")
+    asking_time = prices[count].get("time")
 
-        asking_time = asking_time.replace("-", "")
+    asking_time = asking_time.replace("-", "")
 
-        asking_hhmm = asking_time[9:14]
-        asking_time = asking_time[:8]
-        asking_time_MST = asking_time
-        datetimeobject = datetime.datetime.strptime(asking_time, '%Y%m%d')
-        asking_time = datetimeobject.strftime('%d/%m/%Y')
-        # asking_open = prices[count].get("openMid")
-        asking_open = prices[count - 1].get("closeMid")
-        asking_low = prices[count].get("lowMid")
-        asking_high = prices[count].get("highMid")
-        asking_close = prices[count].get("closeMid")
-        if lClose != asking_close:
-            ticker = AmiBroker.Stocks.Add(inst)
-            quote = ticker.Quotations.Add(asking_time)
-            # print(asking_time+' '+asking_hhmm)
-            quote.Open = asking_open
-            quote.Low = asking_low
-            quote.High = asking_high
-            quote.Close = asking_close
-            AmiBroker.RefreshAll()
-            lastClose = asking_close
+    asking_hhmm = asking_time[9:14]
+    asking_time = asking_time[:8]
+    asking_time_MST = asking_time
+    datetimeobject = datetime.datetime.strptime(asking_time, '%Y%m%d')
+    asking_time = datetimeobject.strftime('%d/%m/%Y')
+    # asking_open = prices[count].get("openMid")
+    asking_open = prices[count - 1].get("closeMid")
+    asking_low = prices[count].get("lowMid")
+    asking_high = prices[count].get("highMid")
+    asking_close = prices[count].get("closeMid")
+    if lClose != asking_close:
+        ticker = AmiBroker.Stocks.Add(inst)
+        quote = ticker.Quotations.Add(asking_time)
+        # print(asking_time+' '+asking_hhmm)
+        quote.Open = asking_open
+        quote.Low = asking_low
+        quote.High = asking_high
+        quote.Close = asking_close
+        AmiBroker.RefreshAll()
+        lastClose = asking_close
 
-            # print(asking_time,asking_open,asking_close)
-            # AmiBroker.RefreshAll()
+        # print(asking_time,asking_open,asking_close)
+        # AmiBroker.RefreshAll()
 
     
 
 def CloseAmi():
     AmiBroker.RefreshAll()
     AmiBroker.SaveDatabase()
-    if tkMessageBox.askokcancel("Quit", "You want to quit now? *sniff*"):
+    if tkMessageBox.askokcancel("Quit", "You want to quit now?"):
         top.destroy()
 
 
@@ -347,7 +346,7 @@ refreshrateMenu.pack()
 isRT = IntVar() # realtime or not
 isRT.set(0)
 
-C1 = Checkbutton(top, text="Real time", variable=isRT, \
+C1 = Checkbutton(top, text="Real time (Only Current)", variable=isRT, \
                  onvalue=1, offvalue=0, \
                  width=20)
 
