@@ -44,7 +44,7 @@ Anything beyond that only EOD data is fetched.
 
 * install required modules (look at main.py)
 
-* Copy amicom.format into the format ofler inside Amibroker
+* Copy amicom.format into the format folder inside Amibroker
 
 * run `python main.py`
 
@@ -52,16 +52,18 @@ Anything beyond that only EOD data is fetched.
 
 If you need to add a new symbol use amibroker to make a new one and then in AmiCOM click on Back fill current
 
+All symbols need to be in the Yahoo Finance format for instance RELIANCE.NS (.NS for NSE .BO for BSE) and ^NSEI for NIFTY50  ^NSEBANK for BANKNIFTY
 
 
 ![snap.png](snap.png)
 
 
-Please not that this project is in active development and must not be used in any  serious work, use this at your own discretion.  
+Please note that this project is in active development and must not be used in any serious work, use this at your own discretion.  
+I am posting here to seek help from the developer community here to make it more user friendly to common users.
+
+I have a lot of To-Dos  planed like integrating broker APIs to pull data and to use invseting.com instead of yahoo finance. Realtime tick update is still a work in progress and isn't implemented yet.
 
 
-Collaborators are welcomed to send PRs and post issues on Github. 
-
-
+Collaborators are welcomed to send PRs and post issues on Github.  This is one of my first opensource projects so please bear with my  coding style
 
 AmiCOM is provided with GPL license thus if you use parts of this project in your project you are required to release its source code.
