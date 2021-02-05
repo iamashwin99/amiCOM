@@ -38,17 +38,17 @@ Anything beyond that only EOD data is fetched.
 
 # How to use this?
 
-\* Clone this repository into the root of your C drive (VERY IMPORTANT).
+* Clone this repository into the root of your C drive (VERY IMPORTANT).
 
-\* Unzip DB.zip and TickerList.zip within this folder
+* Unzip DB.zip and TickerList.zip within this folder
 
-\* install required modules (look at main.py)
+* install required modules (look at main.py)
 
-\* Copy amicom.format into the format ofler inside Amibroker
+* Copy amicom.format into the format ofler inside Amibroker
 
-\* run `python main.py`
+* run `python main.py`
 
-\* Enjoy!
+* Enjoy!
 
 If you need to add a new symbol use amibroker to make a new one and then in AmiCOM click on Back fill current
 
