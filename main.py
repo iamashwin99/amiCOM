@@ -3,16 +3,16 @@ import os  # To manage paths
 import sys
 from win32com.client import Dispatch
 import datetime 
-import tkinter
 from sys import argv
 import tkinter
-from tkinter import *
 import time
 import pandas as pd
 import yfinance as yf
 import logging
 import tkinter.messagebox as tkMessageBox
-
+# ttk makes the window look like running Operating System’s theme
+from tkinter import ttk
+import tkinter.scrolledtext as st 
 
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
@@ -45,7 +45,7 @@ AmiBroker.LoadDatabase(NIFTY50DB)
 ## Methods
 
 def ImportTickers():
-
+    
     source=DB.get() #"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1"
     ticker =[]
     if(source =="NIFTY50" ): 
@@ -65,6 +65,8 @@ def ImportTickers():
     for count in range(0, len(ticker)):
         AmiBroker.Stocks.Add(ticker[count])
     AmiBroker.RefreshAll()
+    AmiBroker.SaveDatabase()
+    
 
 
 
@@ -114,6 +116,7 @@ def Backfill():
 
 
 def Import():
+    
     #return 0
     #global daysToFil
     path = TempFile
@@ -155,10 +158,12 @@ def Import():
         dfa.to_csv(path, index=False,header=None)
         AmiBroker.Import(0, path, "amicom.format")
         AmiBroker.RefreshAll()
+    
 
 
 
 def QuickImport():
+    
     #return 0
     #global daysToFil
     path = TempFile
@@ -200,9 +205,11 @@ def QuickImport():
         dfa.to_csv(path, index=False,header=None)
         AmiBroker.Import(0, path, "amicom.format")
         AmiBroker.RefreshAll()
+    
 
 
 def ImportCur():
+    
     path =TempFile
     open(path, 'w').close()
 
@@ -221,10 +228,10 @@ def ImportCur():
     end_date = e_date.strftime("%Y-%m-%d")
 
     inst = AmiBroker.ActiveDocument.Name
-    #logging.debug("Getting data for "+str(inst))
+    logMe("Getting data for "+str(inst))
     tickerData = yf.Ticker(inst)
     tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
-    #logging.debug("Got data for "+str(inst))
+    logMe("Got data for "+str(inst))
     timelist = list(tickerDf.index)
     ticker=[inst]*len(tickerDf)
     ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
@@ -239,9 +246,12 @@ def ImportCur():
     dfa.to_csv(path, index=False,header=None)
     AmiBroker.Import(0, path, "amicom.format")
     AmiBroker.RefreshAll()
+    
 
 
 def RT(lClose):
+    #logMe("RT selected")
+    
     return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
     path =TempFile
     open(path, 'w').close()
@@ -287,6 +297,11 @@ def CloseAmi():
     if tkMessageBox.askokcancel("Quit", "You want to quit now?"):
         top.destroy()
 
+def logMe(msg):
+    logging.warning(msg)
+    log = (datetime.datetime.now().strftime('%d-%b-%y %H:%M:%S')+' '+msg+'\n')
+    text_area.insert(tkinter.INSERT,log)
+    text_area.see('end')
 
 
 
@@ -296,57 +311,57 @@ top = tkinter.Tk()
 top.title("AmiCOM")
 top.protocol("WM_DELETE_WINDOW", CloseAmi)
 
-L1 = Label(top, text=" DB Settings")
+L1 = tkinter.Label(top, text=" DB Settings")
 L1.pack()
 
-L2 = Label(top, text=" Choose DB:")
+L2 = tkinter.Label(top, text=" Choose DB:")
 L2.pack()
 
-DB= StringVar(top) # choose DB
+DB= tkinter.StringVar(top) # choose DB
 DB.set("NIFTY50")
-DBMenu = OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1")
+DBMenu = tkinter.OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1")
 DBMenu.pack()
 
-L3 = Label(top, text="Days to backfill \n (max 60 for 5min and 7 for 1min)")
+L3 = tkinter.Label(top, text="Days to backfill \n (max 60 for 5min and 7 for 1min)")
 L3.pack()
-daystofill = StringVar()
+daystofill = tkinter.StringVar()
 daystofill.set(6)
-E = Entry(top, textvariable=daystofill)
+E = tkinter.Entry(top, textvariable=daystofill)
 E.pack()
 
 
-B0 = Button(top, text="Import tickers", command=ImportTickers)
+B0 = tkinter.Button(top, text="Import tickers", command=ImportTickers)
 B0.pack()
-B1 = Button(top, text="Backfill all", command=Import)
+B1 = tkinter.Button(top, text="Backfill all", command=Import)
 B1.pack()
-B2 = Button(top, text="Backfill current", command=ImportCur)
+B2 = tkinter.Button(top, text="Backfill current", command=ImportCur)
 B2.pack()
 
-L4 = Label(top, text="Auto Update Settings")
+L4 = tkinter.Label(top, text="Auto Update Settings")
 L4.pack()
 
-isupdate = IntVar() # Auto update or not
-isupdate.set(1)
-C0 = Checkbutton(top, text="Auto Update DB", variable=isupdate, \
+isupdate = tkinter.IntVar() # Auto update or not
+isupdate.set(0)
+C0 = tkinter.Checkbutton(top, text="Auto Update DB", variable=isupdate, \
                  onvalue=1, offvalue=0, \
                  width=20)
 
 C0.pack()
 
 
-L5 = Label(top, text="Update Frequenc:")
+L5 = tkinter.Label(top, text="Update Frequenc:")
 L5.pack()
 
-refreshrate = StringVar(top) #refresh rate 2 min 5min or 1hr
+refreshrate = tkinter.StringVar(top) #refresh rate 2 min 5min or 1hr
 refreshrate.set("2min") # default value
-refreshrateMenu = OptionMenu(top, refreshrate,"30sec" ,"2min", "5min", "1hr")
+refreshrateMenu = tkinter.OptionMenu(top, refreshrate,"30sec" ,"2min", "5min", "1hr")
 refreshrateMenu.pack()
 
 
-isRT = IntVar() # realtime or not
+isRT = tkinter.IntVar() # realtime or not
 isRT.set(0)
 
-C1 = Checkbutton(top, text="Real time (Only Current)", variable=isRT, \
+C1 = tkinter.Checkbutton(top, text="Real time (Only Current)", variable=isRT, \
                  onvalue=1, offvalue=0, \
                  width=20)
 
@@ -354,8 +369,24 @@ C1.pack()
 
 
 
-B3 = Button(top, text="Exit", command=CloseAmi)
+B3 = tkinter.Button(top, text="Exit", command=CloseAmi)
 B3.pack()
+
+# progress = ttk.Progressbar(top, orient = HORIZONTAL, length = 120,mode='indeterminate')
+# progress.pack()
+# # progress.start(10)
+# # time.sleep(5)
+# # progress.stop()
+# scrollbar = Scrollbar(top)
+# scrollbar.pack(side=RIGHT, fill=Y)
+# textbox = Text(top)
+# textbox.pack()
+# textbox.config(yscrollcommand=scrollbar.set)
+# scrollbar.config(command=textbox.yview)
+L5 = tkinter.Label(top, text="Logs:")
+L5.pack()
+text_area = st.ScrolledText(top,width = 30,height = 8,font = ("Times New Roman",10)) 
+text_area.pack() 
 
 
 nextfill = time.time() 
@@ -368,22 +399,22 @@ while True:
     if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 and isupdate.get()==1 ):
         
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
-            logging.warning("Updating selected DB")
+            logMe("Updating selected DB")
             nextfill = time.time()+30
             QuickImport()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
-            logging.warning("Updating selected DB")
+            logMe("Updating selected DB")
             nextfill = time.time()+2*60
             QuickImport()
 
         elif(refreshrate.get()=="5min" and time.time()>nextfill):
-            logging.warning("Updating selected DB")
+            logMe("Updating selected DB")
             nextfill = time.time()+5*60
             QuickImport()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
-            logging.warning("Updating selected DB")
+            logMe("Updating selected DB")
             nextfill = time.time()+60*60
             QuickImport()
 
