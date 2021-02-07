@@ -113,7 +113,58 @@ def Backfill():
                 quote.Close = asking_close
                 AmiBroker.RefreshAll()
 
+def Importthreaded():
+     
+    #return 0
+    #global daysToFil
+    path = TempFile
+    open(path, 'w').close()
+    #file = open(path, 'w')
+    Qty = AmiBroker.Stocks.Count
+    days2Fill = int(daystofill.get()) 
+    if days2Fill < 7:
+        interval_length = '1m'
+    elif days2Fill < 60:
+        interval_length = '5m'
+    else:
+        interval_length = '1d'
 
+    s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
+
+    start_date = s_date.strftime("%Y-%m-%d")
+    end_date = e_date.strftime("%Y-%m-%d")
+    
+    listofstocks=[]
+    for i in range(0, Qty):
+        listofstocks.append(AmiBroker.Stocks(i).Ticker)
+    data = yf.download(" ".join(listofstocks), interval=interval_length, start=start_date, end=end_date,group_by = 'ticker',auto_adjust = True,threads = True)
+    
+    availableList=list(dict(data.keys()).keys()) #Looking for a better way !
+    
+    for i in range(0, len(availableList)):
+        inst = availableList[i]
+        #logging.debug("Getting data for "+str(inst))
+        #tickerData = yf.Ticker(inst)
+        #tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
+        tickerDf = data[inst]
+        #logging.debug("Got data for "+str(inst))
+        timelist = list(tickerDf.index)
+        ticker=[inst]*len(tickerDf)
+        ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
+        time =  [ x.strftime('%H:%M') for x in timelist  ]
+        asking_open = tickerDf['Open']
+        asking_low = tickerDf['Low']
+        asking_high = tickerDf['High']
+        asking_close = tickerDf['Close']
+        asking_volume = tickerDf['Volume']
+        d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+        dfa = pd.DataFrame(data=d).transpose()
+        dfa.to_csv(path, mode='a', index=False,header=None)
+    
+    AmiBroker.Import(0, path, "amicom.format")
+    AmiBroker.RefreshAll()
+    
 
 def Import():
     
