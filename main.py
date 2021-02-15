@@ -9,11 +9,12 @@ import time
 import pandas as pd
 import yfinance as yf
 import logging
+import re
 import tkinter.messagebox as tkMessageBox
 # ttk makes the window look like running Operating System’s theme
 from tkinter import ttk
 import tkinter.scrolledtext as st 
-
+import random
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
 NIFTY50DB = 'C:\\amiCOM\\DB\\NIFTY50'
@@ -30,6 +31,125 @@ NIFTY200List = 'C:\\amiCOM\\TickerList\\NIFTY200.txt'
 CUSTOM1List = 'C:\\amiCOM\\TickerList\\CUSTOM1.txt'
 LOGDIR = 'C:\\amiCOM\\Logs.txt'
 
+indicesY =[
+'^NSEI',
+'^NSMIDCP',
+'^CNX100',
+'^CNX200',
+'^CNX500',
+'^NSEMDCP50',
+'^CRSMID',
+'^CNXSC',
+'^INDIAVIX',
+'NETFMID150.NS',
+'NIFTYSMLCAP50.NS',
+'NIFTYSMLCAP250.NS',
+'MSL400.BO',
+'^NSEBANK',
+'^CNXAUTO',
+'^CNXFIN',
+'^CNXFIN',
+'^CNXFMCG',
+'^CNXIT',
+'^CNXMEDIA',
+'^CNXMETAL',
+'^CNXPHARMA',
+'^CNXPSUBANK',
+'NIFTYPVTBANK.NS',
+'^CNXREALTY',
+'^CNXDIVOP',
+ 'NI15.NS',
+ 'NIFTYQUALITY30.NS',
+ 'NV20.NS',
+ 'NIFTYTR2XLEV.NS',
+ 'NIFTYPR2XLEV.NS',
+ 'NIFTYTR1XINV.NS',
+  'NIFTYPR1XINV.NS',
+ '^NSEDIV',
+ 'na'
+ 'NFTY',
+ 'NIFTY100_EQL_WGT.NS',
+ 'NIFTY100LOWVOL30.NS',
+ 'NIFTY200QUALTY30.NS',
+ 'NIFTYALPHALOWVOL.NS',
+ 'NIFTY200MOMENTM30.NS',
+ '^CNXCMDT',
+ '^CNXCONSUM ',
+ 'CPSE.NS',
+ '^CNXENERGY',
+ '^CNXINFRA',
+ 'LIX15.NS',
+ ' NIFTYMIDLIQ15.NS',
+ '^CNXMNC',
+ '^CNXPSE',
+ '^CNXSERVICE',
+ '^CNX100',
+ 'NIFTYGS8TO13YR.NS',
+ 'NIFTYGS10YR.NS',
+ 'NIFTYGS10YRCLN.NS ',
+ 'NIFTYGS4TO8YR.NS',
+ 'NIFTYGS11TO15YR.NS',
+ 'NIFTYGS11TO15YR.NS',
+ 'NIFTYGSCOMPOSITE.NS']
+indicesN=['NIFTY 50',
+ 'NIFTY NEXT 50',
+ 'NIFTY 100',
+ 'NIFTY 200',
+ 'NIFTY 500',
+ 'NIFTY MIDCAP 50',
+ 'NIFTY MIDCAP 100',
+ 'NIFTY SMLCAP 100',
+ 'INDIA VIX',
+ 'NIFTY MIDCAP 150',
+ 'NIFTY SMLCAP 50',
+ 'NIFTY SMLCAP 250',
+ 'NIFTY MIDSML 400',
+ 'NIFTY BANK',
+ 'NIFTY AUTO',
+ 'NIFTY FIN SERVICE',
+ 'NIFTY FINSRV25 50',
+ 'NIFTY FMCG',
+ 'NIFTY IT',
+ 'NIFTY MEDIA',
+ 'NIFTY METAL',
+ 'NIFTY PHARMA',
+ 'NIFTY PSU BANK',
+ 'NIFTY PVT BANK',
+ 'NIFTY REALTY',
+ 'NIFTY DIV OPPS 50',
+ 'NIFTY GROWSECT 15',
+ 'NIFTY100 QUALTY30',
+ 'NIFTY50 VALUE 20',
+ 'NIFTY50 TR 2X LEV',
+ 'NIFTY50 PR 2X LEV',
+ 'NIFTY50 TR 1X INV',
+ 'NIFTY50 PR 1X INV',
+ 'NIFTY50 DIV POINT',
+ 'NIFTY ALPHA 50',
+ 'NIFTY50 EQL WGT',
+ 'NIFTY100 EQL WGT',
+ 'NIFTY100 LOWVOL30',
+ 'NIFTY200 QUALTY30',
+ 'NIFTY ALPHALOWVOL',
+ 'NIFTY200MOMENTM30',
+ 'NIFTY COMMODITIES',
+ 'NIFTY CONSUMPTION',
+ 'NIFTY CPSE',
+ 'NIFTY ENERGY',
+ 'NIFTY INFRA',
+ 'NIFTY100 LIQ 15',
+ 'NIFTY MID LIQ 15',
+ 'NIFTY MNC',
+ 'NIFTY PSE',
+ 'NIFTY SERV SECTOR',
+ 'NIFTY100ESGSECLDR',
+ 'NIFTY GS 8 13YR',
+ 'NIFTY GS 10YR',
+ 'NIFTY GS 10YR CLN',
+ 'NIFTY GS 4 8YR',
+ 'NIFTY GS 11 15YR',
+ 'NIFTY GS 15YRPLUS',
+ 'NIFTY GS COMPSITE']
 open(LOGDIR, 'w').close() # Clear log file while first load
 
 
@@ -42,7 +162,29 @@ AmiBroker.LoadDatabase(NIFTY50DB)
 
 
 
+
 ## Methods
+def NseOrYahoo(inst):
+    return bool(re.match(r"(^\^\w+|\w+.NS)",inst)) # return if ticker is of yahoo or not
+def Convert2(dest,inst):
+    if dest == 'y': #destination is yahoo
+        if (not NseOrYahoo(inst)): # source is not already yahoo
+            if inst not in indicesN: #check if inst is not indices
+                return inst+'.NS'
+            else:
+                return indicesY[indicesN.index(inst)] #if indices replace it correctly
+        else:
+            return inst
+    elif dest == 'n':
+        if (NseOrYahoo(inst)): #ensure source is yahoo
+            if inst not in indicesY:
+                return inst.split('.')[0] # remove .NS
+            else:
+                return indicesN[indicesY.index(inst)] #if indices replace it correctly
+        else:
+            return inst
+
+
 
 def ImportTickers():
     
@@ -113,7 +255,7 @@ def Backfill():
                 quote.Close = asking_close
                 AmiBroker.RefreshAll()
 
-def Importthreaded():
+def ImportThreaded():
      
     #return 0
     #global daysToFil
@@ -130,6 +272,58 @@ def Importthreaded():
         interval_length = '1d'
 
     s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
+
+    start_date = s_date.strftime("%Y-%m-%d")
+    end_date = e_date.strftime("%Y-%m-%d")
+    
+    listofstocks=[]
+    for i in range(0, Qty):
+        listofstocks.append(AmiBroker.Stocks(i).Ticker)
+    data = yf.download(" ".join(listofstocks), interval=interval_length, start=start_date, end=end_date,group_by = 'ticker',auto_adjust = True,threads = True)
+    
+    availableList=list(dict(data.keys()).keys()) #Looking for a better way !
+    
+    for i in range(0, len(availableList)):
+        inst = availableList[i]
+        #logging.debug("Getting data for "+str(inst))
+        #tickerData = yf.Ticker(inst)
+        #tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
+        tickerDf = data[inst]
+        #logging.debug("Got data for "+str(inst))
+        timelist = list(tickerDf.index)
+        ticker=[inst]*len(tickerDf)
+        ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
+        time =  [ x.strftime('%H:%M') for x in timelist  ]
+        asking_open = tickerDf['Open']
+        asking_low = tickerDf['Low']
+        asking_high = tickerDf['High']
+        asking_close = tickerDf['Close']
+        asking_volume = tickerDf['Volume']
+        d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+        dfa = pd.DataFrame(data=d).transpose()
+        dfa.to_csv(path, mode='a', index=False,header=None)
+    
+    AmiBroker.Import(0, path, "amicom.format")
+    AmiBroker.RefreshAll()
+
+def QuickImportThreaded():
+     
+    #return 0
+    #global daysToFil
+    path = TempFile
+    open(path, 'w').close()
+    #file = open(path, 'w')
+    Qty = AmiBroker.Stocks.Count
+    days2Fill = int(daystofill.get()) 
+    if days2Fill < 7:
+        interval_length = '1m'
+    elif days2Fill < 60:
+        interval_length = '5m'
+    else:
+        interval_length = '1d'
+
+    s_date = datetime.datetime.now()-datetime.timedelta(days = 1)
     e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
@@ -303,42 +497,45 @@ def ImportCur():
 def RT(lClose):
     #logMe("RT selected")
     
-    return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
-    path =TempFile
-    open(path, 'w').close()
-    global lastClose
-    continous = 0
+    #return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
+    # path =TempFile
+    # open(path, 'w').close()
+    # global lastClose
+    # continous = 0
 
     inst = AmiBroker.ActiveDocument.Name
     #Some how get data from yliveticker and then do the following
 
-    asking_time = prices[count].get("time")
+    # asking_time = prices[count].get("time")
 
-    asking_time = asking_time.replace("-", "")
+    # asking_time = asking_time.replace("-", "")
 
-    asking_hhmm = asking_time[9:14]
-    asking_time = asking_time[:8]
-    asking_time_MST = asking_time
-    datetimeobject = datetime.datetime.strptime(asking_time, '%Y%m%d')
-    asking_time = datetimeobject.strftime('%d/%m/%Y')
-    # asking_open = prices[count].get("openMid")
-    asking_open = prices[count - 1].get("closeMid")
-    asking_low = prices[count].get("lowMid")
-    asking_high = prices[count].get("highMid")
-    asking_close = prices[count].get("closeMid")
-    if lClose != asking_close:
+    # asking_hhmm = asking_time[9:14]
+    # asking_time = asking_time[:8]
+    # asking_time_MST = asking_time
+    # #datetimeobject = datetime.datetime.strptime(asking_time, '%d/%m/%Y %H:%M:%S')
+    for t in range(1613191210,1613191210+360,10):
+        
+        asking_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
+        # asking_open = prices[count].get("openMid")
+        asking_open = 200+(random.randint(0,10)) #prices[count - 1].get("closeMid")
+        # asking_low = 8 #prices[count].get("lowMid")
+        # asking_high = 12 # prices[count].get("highMid")
+        # asking_close = 11 #prices[count].get("closeMid")
+        # # if lClose != asking_close:
         ticker = AmiBroker.Stocks.Add(inst)
         quote = ticker.Quotations.Add(asking_time)
         # print(asking_time+' '+asking_hhmm)
         quote.Open = asking_open
-        quote.Low = asking_low
-        quote.High = asking_high
-        quote.Close = asking_close
+        quote.Low = asking_open
+        quote.High = asking_open
+        quote.Close = asking_open
+        #print(inst+str(t)+" "+str(asking_open))
         AmiBroker.RefreshAll()
-        lastClose = asking_close
+        #lastClose = asking_close
 
         # print(asking_time,asking_open,asking_close)
-        # AmiBroker.RefreshAll()
+        #AmiBroker.RefreshAll()
 
     
 
@@ -383,7 +580,7 @@ E.pack()
 
 B0 = tkinter.Button(top, text="Import tickers", command=ImportTickers)
 B0.pack()
-B1 = tkinter.Button(top, text="Backfill all", command=Import)
+B1 = tkinter.Button(top, text="Backfill all", command=ImportThreaded)
 B1.pack()
 B2 = tkinter.Button(top, text="Backfill current", command=ImportCur)
 B2.pack()
@@ -436,7 +633,7 @@ B3.pack()
 # scrollbar.config(command=textbox.yview)
 L5 = tkinter.Label(top, text="Logs:")
 L5.pack()
-text_area = st.ScrolledText(top,width = 30,height = 8,font = ("Times New Roman",10)) 
+text_area = st.ScrolledText(top,width = 40,height = 8,font = ("Times New Roman",10)) 
 text_area.pack() 
 
 
@@ -452,22 +649,22 @@ while True:
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             logMe("Updating selected DB")
             nextfill = time.time()+30
-            QuickImport()
+            QuickImportThreaded()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+2*60
-            QuickImport()
+            QuickImportThreaded()
 
         elif(refreshrate.get()=="5min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+5*60
-            QuickImport()
+            QuickImportThreaded()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+60*60
-            QuickImport()
+            QuickImportThreaded()
 
 
     if(currentDB!=DB.get()):  ### Check if DB has changed
