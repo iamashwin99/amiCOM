@@ -66,7 +66,7 @@ indicesY =[
  'NIFTYTR1XINV.NS',
   'NIFTYPR1XINV.NS',
  '^NSEDIV',
- 'na'
+ 'na',
  'NFTY',
  'NIFTY100_EQL_WGT.NS',
  'NIFTY100LOWVOL30.NS',
