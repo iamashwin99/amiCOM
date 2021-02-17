@@ -15,12 +15,16 @@ import tkinter.messagebox as tkMessageBox
 from tkinter import ttk
 import tkinter.scrolledtext as st 
 import random
+from jugaad_data.nse import NSELive
+n = NSELive()
+
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
 NIFTY50DB = 'C:\\amiCOM\\DB\\NIFTY50'
 NIFTY100DB = 'C:\\amiCOM\\DB\\NIFTY100'
 NIFTY200DB = 'C:\\amiCOM\\DB\\NIFTY200'
 CUSTOM1DB = 'C:\\amiCOM\\DB\\CUSTOM1'
+NEAREXPDB = 'C:\\amiCOM\\DB\\NEAREXP'
 
 TempFile= 'C:\\amiCOM\\temp.txt'
 open(TempFile, 'w').close() # Clear temp file while first load
@@ -29,35 +33,36 @@ NIFTY50list = 'C:\\amiCOM\\TickerList\\NIFTY50.txt'
 NIFTY100List = 'C:\\amiCOM\\TickerList\\NIFTY100.txt'
 NIFTY200List = 'C:\\amiCOM\\TickerList\\NIFTY200.txt'
 CUSTOM1List = 'C:\\amiCOM\\TickerList\\CUSTOM1.txt'
+NEAREXPList = 'C:\\amiCOM\\TickerList\\NEAREXP.txt'
+
 LOGDIR = 'C:\\amiCOM\\Logs.txt'
 
-indicesY =[
-'^NSEI',
-'^NSMIDCP',
-'^CNX100',
-'^CNX200',
-'^CNX500',
-'^NSEMDCP50',
-'^CRSMID',
-'^CNXSC',
-'^INDIAVIX',
-'NETFMID150.NS',
-'NIFTYSMLCAP50.NS',
-'NIFTYSMLCAP250.NS',
-'MSL400.BO',
-'^NSEBANK',
-'^CNXAUTO',
-'^CNXFIN',
-'^CNXFIN',
-'^CNXFMCG',
-'^CNXIT',
-'^CNXMEDIA',
-'^CNXMETAL',
-'^CNXPHARMA',
-'^CNXPSUBANK',
-'NIFTYPVTBANK.NS',
-'^CNXREALTY',
-'^CNXDIVOP',
+indicesY = ['^NSEI',
+ '^NSMIDCP',
+ '^CNX100',
+ '^CNX200',
+ '^CNX500',
+ '^NSEMDCP50',
+ '^CRSMID',
+ '^CNXSC',
+ '^INDIAVIX',
+ 'NETFMID150.NS',
+ 'NIFTYSMLCAP50.NS',
+ 'NIFTYSMLCAP250.NS',
+ 'MSL400.BO',
+ '^NSEBANK',
+ '^CNXAUTO',
+ '^CNXFIN',
+ '^CNXFIN',
+ '^CNXFMCG',
+ '^CNXIT',
+ '^CNXMEDIA',
+ '^CNXMETAL',
+ '^CNXPHARMA',
+ '^CNXPSUBANK',
+ 'NIFTYPVTBANK.NS',
+ '^CNXREALTY',
+ '^CNXDIVOP',
  'NI15.NS',
  'NIFTYQUALITY30.NS',
  'NV20.NS',
@@ -150,25 +155,27 @@ indicesN=['NIFTY 50',
  'NIFTY GS 11 15YR',
  'NIFTY GS 15YRPLUS',
  'NIFTY GS COMPSITE']
+
 open(LOGDIR, 'w').close() # Clear log file while first load
-
-
 logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 #logging.basicConfig(filename=LOGDIR, level=logging.debug, format='%(asctime)s - %(levelname)s - %(message)s')
 AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
 
-AmiBroker.LoadDatabase(NIFTY50DB)
+AmiBroker.LoadDatabase(CUSTOM1DB)
 
 
 
 
 ## Methods
-def NseOrYahoo(inst):
+def YahooOrNSE(inst):
     return bool(re.match(r"(^\^\w+|\w+.NS)",inst)) # return if ticker is of yahoo or not
+def opti2inst(inst):
+    return inst.split("-")[1]
+
 def Convert2(dest,inst):
     if dest == 'y': #destination is yahoo
-        if (not NseOrYahoo(inst)): # source is not already yahoo
+        if (not YahooOrNSE(inst)): # source is not already yahoo
             if inst not in indicesN: #check if inst is not indices
                 return inst+'.NS'
             else:
@@ -176,7 +183,7 @@ def Convert2(dest,inst):
         else:
             return inst
     elif dest == 'n':
-        if (NseOrYahoo(inst)): #ensure source is yahoo
+        if (YahooOrNSE(inst)): #ensure source is yahoo
             if inst not in indicesY:
                 return inst.split('.')[0] # remove .NS
             else:
@@ -184,8 +191,13 @@ def Convert2(dest,inst):
         else:
             return inst
 
-
-
+def IsOption(inst):
+    if(YahooOrNSE(inst)): # If ints yahoo then not option
+        return 0
+    else:
+        return bool(re.match(r"^OPTI-",inst))
+    
+## Data filling methods
 def ImportTickers():
     
     source=DB.get() #"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1"
@@ -198,14 +210,28 @@ def ImportTickers():
 
     elif(source =="NIFTY200" ): 
         filename = NIFTY200List
-    else: 
+    elif(source=="NEAREXP"): 
+        filename = NEAREXPList
+    else:
         filename = CUSTOM1List
 
     with open(filename) as f:
         ticker = f.readlines()
         ticker = [x.strip() for x in ticker] # remove whitespace characters like `\n` at the end of each line
+        ticker = [Convert2('n',x) for x in ticker]
+
     for count in range(0, len(ticker)):
-        AmiBroker.Stocks.Add(ticker[count])
+        if not IsOption(ticker[count]):
+            AmiBroker.Stocks.Add(ticker[count]) # Add tickers from list
+        else:
+            setOptions(opti2inst(ticker[count]))
+            
+    Qty = AmiBroker.Stocks.Count
+    for i in range(0, Qty):
+            inst = AmiBroker.Stocks(i).Ticker
+            if inst not in ticker and (not IsOption(inst)):
+                AmiBroker.Stocks.Remove(inst) # remove tickers not in list
+
     AmiBroker.RefreshAll()
     AmiBroker.SaveDatabase()
     
@@ -279,7 +305,12 @@ def ImportThreaded():
     
     listofstocks=[]
     for i in range(0, Qty):
-        listofstocks.append(AmiBroker.Stocks(i).Ticker)
+        ABstock = AmiBroker.Stocks(i).Ticker
+        if(not IsOption(ABstock)):
+            listofstocks.append(ABstock)
+        else:
+            setOptions(opti2inst(ABstock))
+            
     data = yf.download(" ".join(listofstocks), interval=interval_length, start=start_date, end=end_date,group_by = 'ticker',auto_adjust = True,threads = True)
     
     availableList=list(dict(data.keys()).keys()) #Looking for a better way !
@@ -331,7 +362,13 @@ def QuickImportThreaded():
     
     listofstocks=[]
     for i in range(0, Qty):
-        listofstocks.append(AmiBroker.Stocks(i).Ticker)
+        ABstock = AmiBroker.Stocks(i).Ticker
+        if(not IsOption(ABstock)):
+            listofstocks.append(ABstock)
+        else:
+            setOptions(opti2inst(ABstock))
+            
+
     data = yf.download(" ".join(listofstocks), interval=interval_length, start=start_date, end=end_date,group_by = 'ticker',auto_adjust = True,threads = True)
     
     availableList=list(dict(data.keys()).keys()) #Looking for a better way !
@@ -384,7 +421,11 @@ def Import():
     end_date = e_date.strftime("%Y-%m-%d")
 
     for i in range(0, Qty):
-        inst = AmiBroker.Stocks(i).Ticker
+        inst = AmiBroker.Stocks(i).Ticker        
+        if(IsOption(inst)):
+            setOptions(opti2inst(inst))
+            continue
+        
         #logging.debug("Getting data for "+str(inst))
         tickerData = yf.Ticker(inst)
         tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
@@ -431,7 +472,11 @@ def QuickImport():
     end_date = e_date.strftime("%Y-%m-%d")
 
     for i in range(0, Qty):
+
         inst = AmiBroker.Stocks(i).Ticker
+        if(IsOption(inst)):
+            setOptions(opti2inst(inst))
+            continue
         #logging.debug("Getting data for "+str(inst))
         tickerData = yf.Ticker(inst)
         tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
@@ -454,9 +499,12 @@ def QuickImport():
 
 
 def ImportCur():
-    
-    path =TempFile
-    open(path, 'w').close()
+    inst = AmiBroker.ActiveDocument.Name
+    if(IsOption(inst)):
+            setOptions(opti2inst(ABstock))
+            return 0
+
+    open(TempFile, 'w').close()
 
     days2Fill = int(daystofill.get()) 
     if days2Fill < 7:
@@ -472,7 +520,7 @@ def ImportCur():
     start_date = s_date.strftime("%Y-%m-%d")
     end_date = e_date.strftime("%Y-%m-%d")
 
-    inst = AmiBroker.ActiveDocument.Name
+     
     logMe("Getting data for "+str(inst))
     tickerData = yf.Ticker(inst)
     tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
@@ -488,16 +536,46 @@ def ImportCur():
     asking_volume = tickerDf['Volume']
     d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
     dfa = pd.DataFrame(data=d).transpose()
-    dfa.to_csv(path, index=False,header=None)
-    AmiBroker.Import(0, path, "amicom.format")
+    dfa.to_csv(TempFile, index=False,header=None)
+    AmiBroker.Import(0, TempFile, "amicom.format")
     AmiBroker.RefreshAll()
-    
 
+def refreshOPtions(inst):
+    setOptions("NIFTY")
+    setOptions("BANKNIFTY")
+
+def setOptions(inst):
+    option_chain = n.index_option_chain(inst)
+    now=datetime.datetime.now() 
+    list=[]
+    for i in range(0,len(option_chain['filtered']['data'])):
+        side ='CE'
+        name='OPTI-'+str(inst)+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+        date =now.strftime('%Y%m%d')
+        time = now.strftime('%H:%M')
+        price = option_chain['filtered']['data'][i][side]["lastPrice"]
+        volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
+        openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
+        list.append([name, date ,time,price ,price,price,price ,volume, openint ])
+
+        side ='PE'
+        name='OPTI-'+str(inst)+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+        date =now.strftime('%Y%m%d')
+        time = now.strftime('%H:%M')
+        price = option_chain['filtered']['data'][i][side]["lastPrice"]
+        volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
+        openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
+        list.append([name, date ,time,price ,price,price,price ,volume, openint ])
+        df=pd.DataFrame(list)
+        df.to_csv(TempFile, index=False,header=None)
+    
+    AmiBroker.Import(0, TempFile, "amicomopti.format")
+    AmiBroker.RefreshAll()
 
 def RT(lClose):
     #logMe("RT selected")
     
-    #return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
+    return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
     # path =TempFile
     # open(path, 'w').close()
     # global lastClose
@@ -650,21 +728,25 @@ while True:
             logMe("Updating selected DB")
             nextfill = time.time()+30
             QuickImportThreaded()
+            refreshOPtions()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+2*60
             QuickImportThreaded()
+            refreshOPtions()
 
         elif(refreshrate.get()=="5min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+5*60
             QuickImportThreaded()
+            refreshOPtions()
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+60*60
             QuickImportThreaded()
+            refreshOPtions()
 
 
     if(currentDB!=DB.get()):  ### Check if DB has changed
