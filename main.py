@@ -162,7 +162,7 @@ logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:
 AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
 
-AmiBroker.LoadDatabase(CUSTOM1DB)
+AmiBroker.LoadDatabase(NEAREXPDB)
 
 
 
@@ -222,7 +222,7 @@ def ImportTickers():
 
     for count in range(0, len(ticker)):
         if not IsOption(ticker[count]):
-            AmiBroker.Stocks.Add(ticker[count]) # Add tickers from list
+            AmiBroker.Stocks.Add(Convert2('n',ticker[count])) # Add tickers from list
         else:
             setOptions(opti2inst(ticker[count]))
             
@@ -262,7 +262,7 @@ def Backfill():
         for i in range(0, Qty):
             inst = AmiBroker.Stocks(i).Ticker
             #logging.debug("Getting data for "+str(inst))
-            tickerData = yf.Ticker(inst)
+            tickerData = yf.Ticker(Convert2('y',inst))
             tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
             #logging.debug("Got data for "+str(inst))
             timelist = list(tickerDf.index)
@@ -273,7 +273,7 @@ def Backfill():
                 asking_high = tickerDf['High'][count]
                 asking_close = tickerDf['Close'][count]
                 asking_volume = tickerDf['Volume'][count]                
-                ticker = AmiBroker.Stocks.Add(inst)
+                ticker = AmiBroker.Stocks.Add(Convert2('n',inst))
                 quote = ticker.Quotations.Add(asking_time)
                 quote.Open = asking_open
                 quote.Low = asking_low
@@ -307,7 +307,7 @@ def ImportThreaded():
     for i in range(0, Qty):
         ABstock = AmiBroker.Stocks(i).Ticker
         if(not IsOption(ABstock)):
-            listofstocks.append(ABstock)
+            listofstocks.append(Convert2('y',ABstock))
         else:
             setOptions(opti2inst(ABstock))
             
@@ -316,7 +316,7 @@ def ImportThreaded():
     availableList=list(dict(data.keys()).keys()) #Looking for a better way !
     
     for i in range(0, len(availableList)):
-        inst = availableList[i]
+        inst =  availableList[i]
         #logging.debug("Getting data for "+str(inst))
         #tickerData = yf.Ticker(inst)
         #tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
@@ -324,6 +324,7 @@ def ImportThreaded():
         #logging.debug("Got data for "+str(inst))
         timelist = list(tickerDf.index)
         ticker=[inst]*len(tickerDf)
+        ticker =[Convert2('n',x) for x in ticker]
         ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
         time =  [ x.strftime('%H:%M') for x in timelist  ]
         asking_open = tickerDf['Open']
@@ -364,9 +365,10 @@ def QuickImportThreaded():
     for i in range(0, Qty):
         ABstock = AmiBroker.Stocks(i).Ticker
         if(not IsOption(ABstock)):
-            listofstocks.append(ABstock)
+            listofstocks.append(Convert2('y',ABstock))
         else:
-            setOptions(opti2inst(ABstock))
+            #setOptions(opti2inst(ABstock))
+            pass
             
 
     data = yf.download(" ".join(listofstocks), interval=interval_length, start=start_date, end=end_date,group_by = 'ticker',auto_adjust = True,threads = True)
@@ -382,6 +384,7 @@ def QuickImportThreaded():
         #logging.debug("Got data for "+str(inst))
         timelist = list(tickerDf.index)
         ticker=[inst]*len(tickerDf)
+        ticker =[Convert2('n',x) for x in ticker]
         ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
         time =  [ x.strftime('%H:%M') for x in timelist  ]
         asking_open = tickerDf['Open']
@@ -427,11 +430,13 @@ def Import():
             continue
         
         #logging.debug("Getting data for "+str(inst))
-        tickerData = yf.Ticker(inst)
+        #tickerData = yf.Ticker(inst)
+        tickerData = yf.Ticker(Convert2('y',inst))
         tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
         #logging.debug("Got data for "+str(inst))
         timelist = list(tickerDf.index)
         ticker=[inst]*len(tickerDf)
+        ticker =[Convert2('n',x) for x in ticker]
         ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
         time =  [ x.strftime('%H:%M') for x in timelist  ]
         asking_open = tickerDf['Open']
@@ -478,11 +483,12 @@ def QuickImport():
             setOptions(opti2inst(inst))
             continue
         #logging.debug("Getting data for "+str(inst))
-        tickerData = yf.Ticker(inst)
+        tickerData = yf.Ticker(Convert2('y',inst))
         tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
         #logging.debug("Got data for "+str(inst))
         timelist = list(tickerDf.index)
         ticker=[inst]*len(tickerDf)
+        ticker =[Convert2('n',x) for x in ticker]
         ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
         time =  [ x.strftime('%H:%M') for x in timelist  ]
         asking_open = tickerDf['Open']
@@ -522,11 +528,12 @@ def ImportCur():
 
      
     logMe("Getting data for "+str(inst))
-    tickerData = yf.Ticker(inst)
+    tickerData = yf.Ticker(Convert2('y',inst))
     tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
     logMe("Got data for "+str(inst))
     timelist = list(tickerDf.index)
     ticker=[inst]*len(tickerDf)
+    ticker =[Convert2('n',x) for x in ticker]
     ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
     time =  [ x.strftime('%H:%M') for x in timelist  ]
     asking_open = tickerDf['Open']
@@ -540,17 +547,19 @@ def ImportCur():
     AmiBroker.Import(0, TempFile, "amicom.format")
     AmiBroker.RefreshAll()
 
-def refreshOPtions(inst):
+def refreshOPtions():
     setOptions("NIFTY")
     setOptions("BANKNIFTY")
 
 def setOptions(inst):
     option_chain = n.index_option_chain(inst)
+    if len(option_chain)==0:
+        return 0
     now=datetime.datetime.now() 
     list=[]
     for i in range(0,len(option_chain['filtered']['data'])):
         side ='CE'
-        name='OPTI-'+str(inst)+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+        name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
         date =now.strftime('%Y%m%d')
         time = now.strftime('%H:%M')
         price = option_chain['filtered']['data'][i][side]["lastPrice"]
@@ -559,15 +568,15 @@ def setOptions(inst):
         list.append([name, date ,time,price ,price,price,price ,volume, openint ])
 
         side ='PE'
-        name='OPTI-'+str(inst)+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+        name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
         date =now.strftime('%Y%m%d')
-        time = now.strftime('%H:%M')
+        time = now.strftime('%H:%M:%S')
         price = option_chain['filtered']['data'][i][side]["lastPrice"]
         volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
         openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
         list.append([name, date ,time,price ,price,price,price ,volume, openint ])
-        df=pd.DataFrame(list)
-        df.to_csv(TempFile, index=False,header=None)
+    df=pd.DataFrame(list)
+    df.to_csv(TempFile, index=False,header=None)
     
     AmiBroker.Import(0, TempFile, "amicomopti.format")
     AmiBroker.RefreshAll()
@@ -645,7 +654,7 @@ L2.pack()
 
 DB= tkinter.StringVar(top) # choose DB
 DB.set("NIFTY50")
-DBMenu = tkinter.OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1")
+DBMenu = tkinter.OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1","NEAREXP")
 DBMenu.pack()
 
 L3 = tkinter.Label(top, text="Days to backfill \n (max 60 for 5min and 7 for 1min)")
@@ -717,7 +726,7 @@ text_area.pack()
 
 nextfill = time.time() 
 
-currentDB = "NIFTY50"
+currentDB = "NEAREXP"
 while True:
     if isRT.get() == 1:
         RT(lastClose)
@@ -758,6 +767,8 @@ while True:
             AmiBroker.LoadDatabase(NIFTY200DB)
         elif(DB.get()=="CUSTOM1"):
             AmiBroker.LoadDatabase(CUSTOM1DB)
+        elif(DB.get()=="NEAREXP"):
+            AmiBroker.LoadDatabase(NEAREXPDB)
         currentDB = DB.get()           
 
 
