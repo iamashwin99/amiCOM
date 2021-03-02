@@ -3,4 +3,5 @@ __pycache__/
 DB/
 TickerList/
 test.py 
+keys.py
 comtest.ipynb
