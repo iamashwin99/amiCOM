@@ -223,7 +223,7 @@ def ImportTickers():
     elif(source=="BNBDB"): 
         import re
         filename = BNBList
-        prices = client.get_all_tickers()
+        prices = Bclient.get_all_tickers()
         simlist=[]
         for i in range (0,len(prices)):
             a=(prices)[i]["symbol"]
