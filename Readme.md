@@ -4,6 +4,8 @@ AmiCOM (development in progress ) is a python utility to automatically import
 
 Data from Yahoo finance into Amibroker.
 
+Update: Now it supports getting realtime option data from NSE and suports getting crypto currency pair data from binance api (just paste  binance api key and secret in keys.py)
+
 
 
 # How does it work

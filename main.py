@@ -364,12 +364,14 @@ def ImportThreaded():
     AmiBroker.RefreshAll()
 
 def QuickImportThreaded():
-     
-    #return 0
-    #global daysToFil
+    if(DB.get()=="BNBDB"):
+        BNBRefresh()
+        return 0 
+    else:
+        refreshOPtions()
+
     path = TempFile
     open(path, 'w').close()
-    #file = open(path, 'w')
     Qty = AmiBroker.Stocks.Count
     days2Fill = int(daystofill.get()) 
     if days2Fill < 7:
@@ -401,11 +403,7 @@ def QuickImportThreaded():
     
     for i in range(0, len(availableList)):
         inst = availableList[i]
-        #logging.debug("Getting data for "+str(inst))
-        #tickerData = yf.Ticker(inst)
-        #tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
         tickerDf = data[inst]
-        #logging.debug("Got data for "+str(inst))
         timelist = list(tickerDf.index)
         ticker=[inst]*len(tickerDf)
         ticker =[Convert2('n',x) for x in ticker]
@@ -511,39 +509,6 @@ def RT(lClose):
     # global lastClose
     # continous = 0
 
-    inst = AmiBroker.ActiveDocument.Name
-    #Some how get data from yliveticker and then do the following
-
-    # asking_time = prices[count].get("time")
-
-    # asking_time = asking_time.replace("-", "")
-
-    # asking_hhmm = asking_time[9:14]
-    # asking_time = asking_time[:8]
-    # asking_time_MST = asking_time
-    # #datetimeobject = datetime.datetime.strptime(asking_time, '%d/%m/%Y %H:%M:%S')
-    for t in range(1613191210,1613191210+360,10):
-        
-        asking_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(t))
-        # asking_open = prices[count].get("openMid")
-        asking_open = 200+(random.randint(0,10)) #prices[count - 1].get("closeMid")
-        # asking_low = 8 #prices[count].get("lowMid")
-        # asking_high = 12 # prices[count].get("highMid")
-        # asking_close = 11 #prices[count].get("closeMid")
-        # # if lClose != asking_close:
-        ticker = AmiBroker.Stocks.Add(inst)
-        quote = ticker.Quotations.Add(asking_time)
-        # print(asking_time+' '+asking_hhmm)
-        quote.Open = asking_open
-        quote.Low = asking_open
-        quote.High = asking_open
-        quote.Close = asking_open
-        #print(inst+str(t)+" "+str(asking_open))
-        AmiBroker.RefreshAll()
-        #lastClose = asking_close
-
-        # print(asking_time,asking_open,asking_close)
-        #AmiBroker.RefreshAll()
 
 def BNBBackfill():
      #return 0
@@ -573,7 +538,6 @@ def BNBBackfill():
         try:
             #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, start_date, end_date)
             klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, str(days2Fill)+" day ago UTC")
-            logMe(str(len(klines)))
             df = pd.DataFrame(klines)
             #print(df.head(1))
             #logging.debug("Got data for "+str(inst))
@@ -623,7 +587,7 @@ def BNBRefresh():
         try:
             #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, start_date, end_date)
             klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, "1 day ago UTC")
-            logMe(str(len(klines)))
+            #logMe(str(len(klines)))
             df = pd.DataFrame(klines)
             #print(df.head(1))
             #logging.debug("Got data for "+str(inst))
@@ -739,31 +703,31 @@ while True:
     if isRT.get() == 1:
         RT(lastClose)
     daysToFill = daystofill.get()
-    if (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16 and isupdate.get()==1 ):
+    if ( ( (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16) or DB.get()=="BNBDB"  ) and isupdate.get()==1 ):
         
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             logMe("Updating selected DB")
             nextfill = time.time()+30
             QuickImportThreaded()
-            refreshOPtions()
+            
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+2*60
             QuickImportThreaded()
-            refreshOPtions()
+            
 
         elif(refreshrate.get()=="5min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+5*60
             QuickImportThreaded()
-            refreshOPtions()
+            
 
         elif(refreshrate.get()=="2min" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+60*60
             QuickImportThreaded()
-            refreshOPtions()
+            
 
 
     if(currentDB!=DB.get()):  ### Check if DB has changed
