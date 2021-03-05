@@ -36,6 +36,10 @@ If you choose to back fill up-to past 60 days then 5 min candles will be chosen
 
 Anything beyond that only EOD data is fetched. 
 
+NSE options are downloaded realtime thus no backfill option is available.
+
+There is no restriction as such on data gathered from binance.
+
 
 
 # How to use this?
