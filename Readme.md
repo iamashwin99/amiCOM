@@ -38,7 +38,7 @@ Anything beyond that only EOD data is fetched.
 
 NSE options are downloaded realtime thus no backfill option is available.
 
-There is no restriction as such on data gathered from binance.
+There is no restriction as such on data gathered from binance. By default only 30 minute candles are downloaded can be changed via main.py.
 
 
 

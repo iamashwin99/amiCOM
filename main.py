@@ -223,12 +223,15 @@ def ImportTickers():
     elif(source=="BNBDB"): 
         import re
         filename = BNBList
-        prices = Bclient.get_all_tickers()
         simlist=[]
-        for i in range (0,len(prices)):
-            a=(prices)[i]["symbol"]
-            if ( re.search('(\w+USDT)',a)) :
-                simlist.append(a)
+        info = Bclient.get_exchange_info()
+        for i in range(0,len((info['symbols']))):
+            a= info['symbols'][i]
+            if a['status'] == 'TRADING':
+                if ( re.search('(\w+USDT)',a['symbol']) ):
+                    if not ( re.search('(\w+UPUSDT)',a['symbol']) ):
+                        if not ( re.search('(\w+DOWNUSDT)',a['symbol']) ):
+                            simlist.append(a['symbol'])
         with open(filename, 'w') as f: 
             for item in simlist:
                 f.write(item+'.BNB\n')
@@ -252,8 +255,7 @@ def ImportTickers():
     for i in range(0, Qty):
             inst = AmiBroker.Stocks(i).Ticker
             if inst not in ticker and (not IsOption(inst)):
-                AmiBroker.Stocks.Remove(inst) # remove tickers not in list
-
+                pass#AmiBroker.Stocks.Remove(inst) # remove tickers not in list
     AmiBroker.RefreshAll()
     AmiBroker.SaveDatabase()
     
@@ -264,7 +266,7 @@ def Backfill():
     #return 0
 
 
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
     if days2Fill < 7:
         interval_length = '1m'
     elif days2Fill < 60:
@@ -272,7 +274,7 @@ def Backfill():
     else:
         interval_length = '1d'
 
-    s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
     e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
@@ -313,7 +315,7 @@ def ImportThreaded():
     open(path, 'w').close()
     #file = open(path, 'w')
     Qty = AmiBroker.Stocks.Count
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
     if days2Fill < 7:
         interval_length = '1m'
     elif days2Fill < 60:
@@ -321,7 +323,7 @@ def ImportThreaded():
     else:
         interval_length = '1d'
 
-    s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
     e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
@@ -356,8 +358,8 @@ def ImportThreaded():
         asking_high = tickerDf['High']
         asking_close = tickerDf['Close']
         asking_volume = tickerDf['Volume']
-        d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
-        dfa = pd.DataFrame(data=d).transpose()
+        #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+        dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
         dfa.to_csv(path, mode='a', index=False,header=None)
     
     AmiBroker.Import(0, path, "amicom.format")
@@ -373,7 +375,7 @@ def QuickImportThreaded():
     path = TempFile
     open(path, 'w').close()
     Qty = AmiBroker.Stocks.Count
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
     if days2Fill < 7:
         interval_length = '1m'
     elif days2Fill < 60:
@@ -414,24 +416,29 @@ def QuickImportThreaded():
         asking_high = tickerDf['High']
         asking_close = tickerDf['Close']
         asking_volume = tickerDf['Volume']
-        d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
-        dfa = pd.DataFrame(data=d).transpose()
+        #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+        dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
         dfa.to_csv(path, mode='a', index=False,header=None)
-    
     AmiBroker.Import(0, path, "amicom.format")
     AmiBroker.RefreshAll()
     
 
 
 def ImportCur():
+    
     inst = AmiBroker.ActiveDocument.Name
+    if (DB.get()== 'BNBDB'):
+        
+        BNBBackfillone(inst)
+        return 0
+
     if(IsOption(inst)):
             setOptions(opti2inst(inst))
             return 0
 
     open(TempFile, 'w').close()
 
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
     if days2Fill < 7:
         interval_length = '1m'
     elif days2Fill < 60:
@@ -439,7 +446,7 @@ def ImportCur():
     else:
         interval_length = '1d'
 
-    s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
     e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     start_date = s_date.strftime("%Y-%m-%d")
@@ -460,8 +467,8 @@ def ImportCur():
     asking_high = tickerDf['High']
     asking_close = tickerDf['Close']
     asking_volume = tickerDf['Volume']
-    d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
-    dfa = pd.DataFrame(data=d).transpose()
+    #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+    dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
     dfa.to_csv(TempFile, index=False,header=None)
     AmiBroker.Import(0, TempFile, "amicom.format")
     AmiBroker.RefreshAll()
@@ -471,29 +478,42 @@ def refreshOPtions():
     setOptions("BANKNIFTY")
 
 def setOptions(inst):
-    option_chain = n.index_option_chain(inst)
-    if len(option_chain)==0:
+    try:
+        option_chain = n.index_option_chain(inst)
+        if len(option_chain)==0:
+            return 0
+    except Exception:
+        print(Exception)
         return 0
+
+    
     now=datetime.datetime.now() 
     list=[]
     for i in range(0,len(option_chain['filtered']['data'])):
-        side ='CE'
-        name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
-        date =now.strftime('%Y%m%d')
-        time = now.strftime('%H:%M')
-        price = option_chain['filtered']['data'][i][side]["lastPrice"]
-        volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
-        openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
-        list.append([name, date ,time,price ,price,price,price ,volume, openint ])
+        try:
+            side ='CE'
+            name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+            date =now.strftime('%Y%m%d')
+            time = now.strftime('%H:%M')
+            price = option_chain['filtered']['data'][i][side]["lastPrice"]
+            volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
+            openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
+            list.append([name, date ,time,price ,price,price,price ,volume, openint ])
 
-        side ='PE'
-        name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
-        date =now.strftime('%Y%m%d')
-        time = now.strftime('%H:%M:%S')
-        price = option_chain['filtered']['data'][i][side]["lastPrice"]
-        volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
-        openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
-        list.append([name, date ,time,price ,price,price,price ,volume, openint ])
+            
+        except Exception as e:
+            print(e)
+        try:
+            side ='PE'
+            name='OPTI-'+str(inst)+'-'+str(option_chain['filtered']['data'][i][side]['strikePrice'])+side
+            date =now.strftime('%Y%m%d')
+            time = now.strftime('%H:%M:%S')
+            price = option_chain['filtered']['data'][i][side]["lastPrice"]
+            volume=abs(option_chain['filtered']['data'][i][side]["changeinOpenInterest"])
+            openint=abs(option_chain['filtered']['data'][i][side]["openInterest"])
+            list.append([name, date ,time,price ,price,price,price ,volume, openint ])
+        except Exception as e:
+            print(e)
     df=pd.DataFrame(list)
     df.to_csv(TempFile, index=False,header=None)
     
@@ -502,6 +522,12 @@ def setOptions(inst):
 
 def RT(lClose):
     #logMe("RT selected")
+
+
+    if (DB.get()== 'NEAREXP'):
+        refreshOPtions()
+        
+
     
     return 0 # under dev, need to use yahoo-live to fetch ticks using webhooks
     # path =TempFile
@@ -518,9 +544,9 @@ def BNBBackfill():
     #file = open(path, 'w')
     Qty = AmiBroker.Stocks.Count
     
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
 
-    # s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    # s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
     # e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     # start_date = s_date.strftime("%d %b, %Y")
@@ -532,12 +558,12 @@ def BNBBackfill():
             setOptions(opti2inst(inst))
             continue
         
-        #logging.debug("Getting data for "+str(inst))
+        logging.debug("Getting data for "+str(inst))
         tickerData = Convert2('n',inst) #remove .bnb
         #print(tickerData)
         try:
             #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, start_date, end_date)
-            klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, str(days2Fill)+" day ago UTC")
+            klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, str(int(days2Fill))+" day ago UTC")
             df = pd.DataFrame(klines)
             #print(df.head(1))
             #logging.debug("Got data for "+str(inst))
@@ -551,13 +577,57 @@ def BNBBackfill():
             asking_high = df[2]
             asking_close = df[4]
             asking_volume = df[5]
-            d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
-            dfa = pd.DataFrame(data=d).transpose()
+            #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+            dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
             dfa.to_csv(path, index=False,header=None)
             AmiBroker.Import(0, path, "amicom.format")
             AmiBroker.RefreshAll()
         except:
             logMe('coudnt fill '+ tickerData)
+
+def BNBBackfillone(inst):
+     #return 0
+    #global daysToFil
+    path = TempFile
+    open(path, 'w').close()
+    #file = open(path, 'w')
+    # Qty = AmiBroker.Stocks.Count
+    
+    days2Fill = float(daystofill.get()) 
+
+    # s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
+    # e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
+
+    # start_date = s_date.strftime("%d %b, %Y")
+    # end_date = e_date.strftime("%d %b, %Y")
+
+
+    logging.debug("Getting data for "+str(inst))
+    tickerData = inst ## Convert2('n',inst) #remove .bnb
+    #print(tickerData)
+    try:
+        #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, start_date, end_date)
+        klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, str(int(days2Fill))+" day ago UTC")
+        df = pd.DataFrame(klines)
+        #print(df.head(1))
+        #logging.debug("Got data for "+str(inst))
+        timelist = [datetime.datetime.fromtimestamp(x/1000)for x in df[0]]
+        ticker=[inst]*len(klines)
+        ticker =[Convert2('n',x) for x in ticker]
+        ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
+        time =  [ x.strftime('%H:%M') for x in timelist  ]
+        asking_open = df[1]
+        asking_low = df[3]
+        asking_high = df[2]
+        asking_close = df[4]
+        asking_volume = df[5]
+        #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+        dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
+        dfa.to_csv(path, index=False,header=None)
+        AmiBroker.Import(0, path, "amicom.format")
+        AmiBroker.RefreshAll()
+    except:
+        logMe('coudnt fill '+ tickerData)
 
 def BNBRefresh():
          #return 0
@@ -567,47 +637,65 @@ def BNBRefresh():
     #file = open(path, 'w')
     Qty = AmiBroker.Stocks.Count
     
-    days2Fill = int(daystofill.get()) 
+    days2Fill = float(daystofill.get()) 
 
-    # s_date = datetime.datetime.now()-datetime.timedelta(days = int(days2Fill))
+    # s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
     # e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
 
     # start_date = s_date.strftime("%d %b, %Y")
     # end_date = e_date.strftime("%d %b, %Y")
-
+    #tic = datetime.datetime.now()
     for i in range(0, Qty):
+        #print(datetime.datetime.now()-tic)
+
         inst = AmiBroker.Stocks(i).Ticker        
         if(IsOption(inst)):
             setOptions(opti2inst(inst))
             continue
-        
+        #print(datetime.datetime.now()-tic) #0.027 #0.05
         #logging.debug("Getting data for "+str(inst))
         tickerData = Convert2('n',inst) #remove .bnb
         #print(tickerData)
+        #print(datetime.datetime.now()-tic) #0.03 #0.07
         try:
             #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, start_date, end_date)
             klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, "1 day ago UTC")
+            #klines = Bclient.get_historical_klines(tickerData, Client.KLINE_INTERVAL_30MINUTE, "500 minutes ago UTC")
+            #print(datetime.datetime.now()-tic) #0.78 #0.67
             #logMe(str(len(klines)))
             df = pd.DataFrame(klines)
+            #print(datetime.datetime.now()-tic) #0.79 #0.7
             #print(df.head(1))
             #logging.debug("Got data for "+str(inst))
             timelist = [datetime.datetime.fromtimestamp(x/1000)for x in df[0]]
             ticker=[inst]*len(klines)
+            #print(datetime.datetime.now()-tic) #0.8 #0.72
             ticker =[Convert2('n',x) for x in ticker]
             ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
             time =  [ x.strftime('%H:%M') for x in timelist  ]
+           #print(datetime.datetime.now()-tic) #0.8 #0.72
             asking_open = df[1]
             asking_low = df[3]
             asking_high = df[2]
             asking_close = df[4]
             asking_volume = df[5]
-            d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
-            dfa = pd.DataFrame(data=d).transpose()
+            #print(datetime.datetime.now()-tic) #0.8 #0.72
+            #d = [ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]
+            #print(datetime.datetime.now()-tic)  #0.9 # 0.72
+            dfa = pd.DataFrame(data=[ticker,ymd,time,asking_open,asking_high,asking_low,asking_close,asking_volume ]).transpose()
+            #print(datetime.datetime.now()-tic) #0.92 #0.77
             dfa.to_csv(path, index=False,header=None)
+            #print(datetime.datetime.now()-tic) #0.93 #0.8
+            #print("-----")
             AmiBroker.Import(0, path, "amicom.format")
             AmiBroker.RefreshAll()
         except:
             logMe('coudnt fill '+ tickerData)
+            pass
+    
+    logMe('Done refresh  ')
+    #print(datetime.datetime.now()-tic) #0.93 #0.8 #0.5
+
     
 
 def CloseAmi():
@@ -680,7 +768,7 @@ refreshrateMenu.pack()
 isRT = tkinter.IntVar() # realtime or not
 isRT.set(0)
 
-C1 = tkinter.Checkbutton(top, text="Real time (Only Current)", variable=isRT, \
+C1 = tkinter.Checkbutton(top, text="Real time (Only Options)", variable=isRT, \
                  onvalue=1, offvalue=0, \
                  width=20)
 
@@ -697,11 +785,14 @@ text_area.pack()
 
 
 nextfill = time.time() 
+nextRT = time.time() 
 
 currentDB = "BNBDB"
 while True:
-    if isRT.get() == 1:
+    if (isRT.get() == 1 and time.time()>nextRT):
         RT(lastClose)
+        nextRT  = time.time() + 1
+
     daysToFill = daystofill.get()
     if ( ( (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16) or DB.get()=="BNBDB"  ) and isupdate.get()==1 ):
         
@@ -746,5 +837,5 @@ while True:
         currentDB = DB.get()           
     top.update_idletasks()
     top.update()
-    time.sleep(0.0001)
+    time.sleep(0.001)
 
