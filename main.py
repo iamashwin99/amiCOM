@@ -18,7 +18,7 @@ import tkinter.scrolledtext as st
 import random
 from jugaad_data.nse import NSELive
 n = NSELive()
-from keys import *
+##from keys import *
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
 NIFTY50DB = 'C:\\amiCOM\\DB\\NIFTY50'
@@ -165,9 +165,9 @@ logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:
 AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
 
-if(Bapi_key !='BLABLA'):
-    from binance.client import Client
-    Bclient = Client(Bapi_key, Bapi_secret)
+
+from binance.client import Client
+Bclient = Client('Bapi_key', 'Bapi_secret')
 
 
 AmiBroker.LoadDatabase(BNBDB)
