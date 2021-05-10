@@ -17,7 +17,19 @@ from tkinter import ttk
 import tkinter.scrolledtext as st 
 import random
 from jugaad_data.nse import NSELive
+from binance.client import Client
+from decouple import config
+
+API_SEC = 'dummy'
+API_KEY = 'dummy'
+if(os.path.isfile('.env')):
+    API_SEC = config('SEC')
+    API_KEY = config('KEY')
+
+Bclient = Client(API_KEY, API_SEC)
+
 n = NSELive()
+
 ##from keys import *
 lastClose = 0
 abDatabase = 'C:\\amiCOM\\DB'
@@ -166,8 +178,7 @@ AmiBroker = Dispatch("Broker.Application")
 AmiBroker.visible=True
 
 
-from binance.client import Client
-Bclient = Client('Bapi_key', 'Bapi_secret')
+
 
 
 AmiBroker.LoadDatabase(BNBDB)

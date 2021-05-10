@@ -6,3 +6,4 @@ test.py
 keys.py
 comtest.ipynb
 build/
+.env
