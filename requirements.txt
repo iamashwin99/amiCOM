@@ -6,8 +6,11 @@ jugaad_data == 0.22
 # C:\amiCOM\main.py: 10
 pandas == 1.2.1
 
-# C:\amiCOM\main.py: 169
+# C:\amiCOM\main.py: 20
 python_binance == 0.7.9
+
+# C:\amiCOM\main.py: 21
+python_decouple == 3.4
 
 # C:\amiCOM\main.py: 5
 pywin32 == 300
