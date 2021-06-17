@@ -3,10 +3,11 @@ import os  # To manage paths
 import sys
 from typing import NoReturn
 from win32com.client import Dispatch
-import datetime 
+
 from sys import argv
 import tkinter
 import time
+import math
 import pandas as pd
 import yfinance as yf
 import logging
@@ -19,6 +20,8 @@ import random
 from jugaad_data.nse import NSELive
 from binance.client import Client
 from decouple import config
+from kucoin.client import Market
+Kclient = Market(url='https://api.kucoin.com')
 
 API_SEC = 'dummy'
 API_KEY = 'dummy'
@@ -39,6 +42,7 @@ NIFTY200DB = 'C:\\amiCOM\\DB\\NIFTY200'
 CUSTOM1DB = 'C:\\amiCOM\\DB\\CUSTOM1'
 NEAREXPDB = 'C:\\amiCOM\\DB\\NEAREXP'
 BNBDB = 'C:\\amiCOM\\DB\\BINANCE'
+KCSDB = 'C:\\amiCOM\\DB\\KUCOIN'
 
 TempFile= 'C:\\amiCOM\\temp.txt'
 open(TempFile, 'w').close() # Clear temp file while first load
@@ -49,7 +53,7 @@ NIFTY200List = 'C:\\amiCOM\\TickerList\\NIFTY200.txt'
 CUSTOM1List = 'C:\\amiCOM\\TickerList\\CUSTOM1.txt'
 NEAREXPList = 'C:\\amiCOM\\TickerList\\NEAREXP.txt'
 BNBList = 'C:\\amiCOM\\TickerList\\BINANCE.txt'
-
+KCSList = 'C:\\amiCOM\\TickerList\\KUCOIN.txt'
 LOGDIR = 'C:\\amiCOM\\Logs.txt'
 
 indicesY = ['^NSEI',
@@ -187,6 +191,9 @@ AmiBroker.LoadDatabase(BNBDB)
 
 
 ## Methods
+
+def kcs2symbol(kcs):
+  return kcs.split('.KCS')[0]
 def YahooOrNSE(inst):
     return bool(re.match(r"(^\^\w+|\w+.NS)",inst)) # return if ticker is of yahoo or not
 def opti2inst(inst):
@@ -208,15 +215,26 @@ def Convert2(dest,inst):
             else:
                 return indicesN[indicesY.index(inst)] #if indices replace it correctly
         else:
-            return inst.split('.')[0] #remove .bnb from bnb
+            return inst.split('.')[0] #remove .bnb from bnb or kcs from .kcs
 
 def IsOption(inst):
     if(YahooOrNSE(inst)): # If ints yahoo then not option
         return 0
     else:
         return bool(re.match(r"^OPTI-",inst))
-    
+
+
 ## Data filling methods
+def fetchkcstickers():
+  df=pd.DataFrame(Kclient.get_symbol_list())
+  xf = df[df.quoteCurrency.isin(['USDT'])]['symbol']
+
+  return [x+'.KCS'for x in xf]
+
+
+
+
+
 def ImportTickers():
     
     source=DB.get() #"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1"
@@ -246,6 +264,14 @@ def ImportTickers():
         with open(filename, 'w') as f: 
             for item in simlist:
                 f.write(item+'.BNB\n')
+        
+    elif(source=="KCSDB"):
+        filename = KCSList 
+        tickers = fetchkcstickers()
+        with open(filename, 'w') as f: 
+            for item in tickers:
+                f.write(item+'\n')
+        
                 
         
     else:
@@ -270,56 +296,50 @@ def ImportTickers():
     AmiBroker.RefreshAll()
     AmiBroker.SaveDatabase()
     
+def fetchkcs(ndays,ticker):
+  import time
+  nepoch = ndays*48
+  kf = pd.DataFrame()
+  for i in range(0,math.ceil(nepoch/1500)):
+    #print(i)
+    end = int( time.time() - i*30*60*1500 )
+    #print(start)
+    start=end - 30*60*1500
+    #print(f"i = {i} start = {start} end = {end}")
+    kf=kf.append(
+    pd.DataFrame(Kclient.get_kline(ticker,'30min',startAt=start,endAt=end),columns=['time','o','c','h','l','trades','v']), ignore_index=True)
+  timelist=[datetime.datetime.fromtimestamp(int(x))for x in kf['time']]
+  ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
+  time =  [ x.strftime('%H:%M') for x in timelist  ]
+  stock=[ticker]*len(kf)
+  kf['date']=ymd
+  kf['Time']=time
+  kf['stock']=stock
 
 
+  return kf[[ 'stock','date', 'Time', 'o', 'h', 'l','c','v']]
 
-def Backfill():
-    #return 0
-
-
-    days2Fill = float(daystofill.get()) 
-    if days2Fill < 7:
-        interval_length = '1m'
-    elif days2Fill < 60:
-        interval_length = '5m'
-    else:
-        interval_length = '1d'
-
-    s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
-    e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
-
-    start_date = s_date.strftime("%Y-%m-%d")
-    end_date = e_date.strftime("%Y-%m-%d")
-
-    continous = 0
-    while continous == 0:
-        Qty = AmiBroker.Stocks.Count
-        for i in range(0, Qty):
-            inst = AmiBroker.Stocks(i).Ticker
-            #logging.debug("Getting data for "+str(inst))
-            tickerData = yf.Ticker(Convert2('y',inst))
-            tickerDf = tickerData.history(interval=interval_length, start=start_date, end=end_date)
-            #logging.debug("Got data for "+str(inst))
-            timelist = list(tickerDf.index)
-            for count in range(0, len(tickerDf)):                
-                asking_time = timelist[count].strftime('%d/%m/%Y %H:%M:%S')
-                asking_open = tickerDf['Open'][count]
-                asking_low = tickerDf['Low'][count]
-                asking_high = tickerDf['High'][count]
-                asking_close = tickerDf['Close'][count]
-                asking_volume = tickerDf['Volume'][count]                
-                ticker = AmiBroker.Stocks.Add(Convert2('n',inst))
-                quote = ticker.Quotations.Add(asking_time)
-                quote.Open = asking_open
-                quote.Low = asking_low
-                quote.High = asking_high
-                quote.Close = asking_close
-                AmiBroker.RefreshAll()
+def fetchkcs1d(ticker):
+  import time
+  kf=pd.DataFrame(Kclient.get_kline(ticker,'30min',startAt=int(time.time()-24*60*60),endAt=int(time.time())),columns=['time','o','c','h','l','trades','v'])
+  timelist=[datetime.datetime.fromtimestamp(int(x))for x in kf['time']]
+  ymd = [ x.strftime('%Y%m%d') for x in timelist  ]
+  time =  [ x.strftime('%H:%M') for x in timelist  ]
+  stock=[ticker]*len(kf)
+  kf['date']=ymd
+  kf['Time']=time
+  kf['stock']=stock
+  return kf[[ 'stock','date', 'Time', 'o', 'h', 'l','c','v']]
 
 def ImportThreaded():
     if(DB.get()=="BNBDB"):
         BNBBackfill()
         return 0 
+    elif(DB.get()=="KCSDB"):
+        KCSBackfill()
+        return 0
+    else:
+        refreshOPtions()
     #return 0
     #global daysToFil
     path = TempFile
@@ -380,6 +400,10 @@ def QuickImportThreaded():
     if(DB.get()=="BNBDB"):
         BNBRefresh()
         return 0 
+    elif(DB.get()=="KCSDB"):
+        KCSRefresh()
+        return 0
+
     else:
         refreshOPtions()
 
@@ -441,6 +465,10 @@ def ImportCur():
     if (DB.get()== 'BNBDB'):
         
         BNBBackfillone(inst)
+        return 0
+    if (DB.get()== 'KCSDB'):
+              
+        KCSBackfillone(inst)
         return 0
 
     if(IsOption(inst)):
@@ -641,21 +669,12 @@ def BNBBackfillone(inst):
         logMe('coudnt fill '+ tickerData)
 
 def BNBRefresh():
-         #return 0
     #global daysToFil
     path = TempFile
     open(path, 'w').close()
     #file = open(path, 'w')
     Qty = AmiBroker.Stocks.Count
-    
     days2Fill = float(daystofill.get()) 
-
-    # s_date = datetime.datetime.now()-datetime.timedelta(days = float(days2Fill))
-    # e_date =  datetime.datetime.now()+datetime.timedelta(days = 1)
-
-    # start_date = s_date.strftime("%d %b, %Y")
-    # end_date = e_date.strftime("%d %b, %Y")
-    #tic = datetime.datetime.now()
     for i in range(0, Qty):
         #print(datetime.datetime.now()-tic)
 
@@ -707,7 +726,84 @@ def BNBRefresh():
     logMe('Done refresh  ')
     #print(datetime.datetime.now()-tic) #0.93 #0.8 #0.5
 
+
+def KCSRefresh():
+    #global daysToFil
+    path = TempFile
+    open(path, 'w').close()
+    #file = open(path, 'w')
+    Qty = AmiBroker.Stocks.Count
+    days2Fill = float(daystofill.get()) 
+    for i in range(0, Qty):
+
+        inst = AmiBroker.Stocks(i).Ticker        
+        tickerData = inst #Convert2('n',inst) #remove .bnb
+
+        try:
+            dfa = fetchkcs1d(tickerData)
+            dfa.to_csv(path, index=False,header=None)
+            #print(datetime.datetime.now()-tic) #0.93 #0.8
+            #print("-----")
+            AmiBroker.Import(0, path, "amicom.format")
+            AmiBroker.RefreshAll()
+        except:
+            logMe('coudnt fill '+ tickerData)
+            pass
     
+    logMe('Done refresh  ')
+    #print(datetime.datetime.now()-tic) #0.93 #0.8 #0.5
+
+
+def KCSBackfill():
+    #global daysToFil
+    path = TempFile
+    open(path, 'w').close()
+    #file = open(path, 'w')
+    days2Fill = float(daystofill.get())
+    Qty = AmiBroker.Stocks.Count
+    days2Fill = float(daystofill.get()) 
+    for i in range(0, Qty):
+
+        inst = AmiBroker.Stocks(i).Ticker        
+        tickerData = inst #Convert2('n',inst) #remove .bnb
+
+        try:
+            dfa = fetchkcs(days2Fill,tickerData)
+            dfa.to_csv(path, index=False,header=None)
+            #print(datetime.datetime.now()-tic) #0.93 #0.8
+            #print("-----")
+            AmiBroker.Import(0, path, "amicom.format")
+            AmiBroker.RefreshAll()
+        except:
+            logMe('coudnt fill '+ tickerData)
+            pass
+    
+    logMe('Done refresh  ')
+
+
+
+
+
+
+
+def KCSBackfillone(inst):
+    
+    path = TempFile
+    open(path, 'w').close()    
+    days2Fill = float(daystofill.get()) 
+
+    logging.debug("Getting data for "+str(inst))
+    tickerData = inst ## Convert2('n',inst) #remove .bnb
+    #print(tickerData)
+    try: 
+        dfa = fetchkcs(days2Fill,tickerData)
+        dfa.to_csv(path, index=False,header=None)
+        AmiBroker.Import(0, path, "amicom.format")
+        AmiBroker.RefreshAll()
+    except:
+        logMe('coudnt fill '+ tickerData)
+
+
 
 def CloseAmi():
     AmiBroker.RefreshAll()
@@ -737,7 +833,7 @@ L2.pack()
 
 DB= tkinter.StringVar(top) # choose DB
 DB.set("BNBDB")
-DBMenu = tkinter.OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1","NEAREXP","BNBDB")
+DBMenu = tkinter.OptionMenu(top, DB,"NIFTY50" ,"NIFTY100", "NIFTY200", "CUSTOM1","NEAREXP","BNBDB","KCSDB")
 DBMenu.pack()
 
 L3 = tkinter.Label(top, text="Days to backfill \n (max 60 for 5min and 7 for 1min)")
@@ -805,7 +901,10 @@ while True:
         nextRT  = time.time() + 1
 
     daysToFill = daystofill.get()
-    if ( ( (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16) or DB.get()=="BNBDB"  ) and isupdate.get()==1 ):
+    if ( isupdate.get()==1 ):
+        # if not (  DB.get()=="BNBDB" or DB.get()=="KCSDB" ): #we are pulling nse data
+        #     if not (( (datetime.datetime.now().hour >= 9 and datetime.datetime.now().hour < 16)):
+        #         break
         
         if(refreshrate.get()=="30sec" and time.time()>nextfill): ## Check if db needs update
             logMe("Updating selected DB")
@@ -845,6 +944,8 @@ while True:
             AmiBroker.LoadDatabase(NEAREXPDB)
         elif(DB.get()=="BNBDB"):
             AmiBroker.LoadDatabase(BNBDB)
+        elif(DB.get()=="KCSDB"):
+            AmiBroker.LoadDatabase(KCSDB)
         currentDB = DB.get()           
     top.update_idletasks()
     top.update()

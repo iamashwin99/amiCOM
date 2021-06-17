@@ -2,17 +2,19 @@
 
 AmiCOM (development in progress ) is a python utility to automatically import 
 
-Data from Yahoo finance into Amibroker.
+Data from Binance, Kucoin and  Yahoo finance ( for NSE stocks ) into Amibroker.
 
-Update: Now it supports getting realtime option data from NSE and suports getting crypto currency pair data from binance api (just paste  binance api key and secret in keys.py)
+Update: Now it supports getting realtime option data from NSE.
+
+In order to get crypto currency pair data from binance api (just paste  binance api key and secret in .env)
 
 
 
 # How does it work
 
-AmiCOM downloads the required data from yahoo finance for the specified script, time frame and available resolution (more on this later) and pushes it onto a temp file, through OLE automation it then imports them into the specified database. 
+AmiCOM downloads the required data from Binance, Kucoin and  Yahoo finance ( for NSE stocks  for the specified script, time frame and available resolution (more on this later) and pushes it onto a temp file, through OLE automation it then imports them into the specified database. 
 
-Knowing the location of database is important and thus AmiCOM makes use of 3 pre programmed databases (and stored in DB.zip). The 3 pre-programmed dbs include NIFTY50,NIFTY100,NIFTY200 stocks respectively including the major indices . 
+Knowing the location of database is important and thus AmiCOM makes use of 7 pre programmed databases (and stored in DB.zip). The 7 pre-programmed dbs include NIFTY50,NIFTY100,NIFTY200,NEAREXP( NSE indices only),BINANCE,KUCOIN,CUSTOM1.
 
 It is important to note that yahoo finance allows at most 2000 api calls per hour per ip. Thus you need to ensure that you dont cross that limit by managing the number of scripts being refreshed and the refresh rate. eg in the Nifty50 db there are about 60 stocks so 2000 queries per hr/60 scripts =  33.33 database refreshes every hour or  about 1 complete query every 2 mins. So if you are using Nifty50 db you are suggested to refresh not more frequently than once every 2 mins, however you can easily choose higher refresh rate ( like once every 15 mins) without any trouble.
 
@@ -38,7 +40,8 @@ Anything beyond that only EOD data is fetched.
 
 NSE options are downloaded realtime thus no backfill option is available.
 
-There is no restriction as such on data gathered from binance. By default only 30 minute candles are downloaded can be changed via main.py.
+
+There is no restriction as such on data gathered from binance kucoin. By default only 30 minute candles are downloaded can be changed via main.py.
 
 
 
