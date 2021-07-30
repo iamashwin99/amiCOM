@@ -930,7 +930,7 @@ while True:
             QuickImportThreaded()
             
 
-        elif(refreshrate.get()=="2min" and time.time()>nextfill):
+        elif(refreshrate.get()=="1hr" and time.time()>nextfill):
             logMe("Updating selected DB")
             nextfill = time.time()+60*60
             QuickImportThreaded()
