@@ -12,7 +12,7 @@ In order to get crypto currency pair data from binance api (just paste  binance 
 
 # How does it work
 
-AmiCOM downloads the required data from Binance, Kucoin and  Yahoo finance ( for NSE stocks  for the specified script, time frame and available resolution (more on this later) and pushes it onto a temp file, through OLE automation it then imports them into the specified database. 
+AmiCOM downloads the required data from Binance, Kucoin and  Yahoo finance ( for NSE stocks  for the specified script, time frame and available resolution (more on this later) and pushes it onto a temp file, through Microsofts OLE (Object Linking and Embedding) automation it then imports them into the specified database. 
 
 Knowing the location of database is important and thus AmiCOM makes use of 7 pre programmed databases (and stored in DB.zip). The 7 pre-programmed dbs include NIFTY50,NIFTY100,NIFTY200,NEAREXP( NSE indices only),BINANCE,KUCOIN,CUSTOM1.
 
