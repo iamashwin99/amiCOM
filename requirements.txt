@@ -19,4 +19,4 @@ python_decouple == 3.4
 pywin32 == 300
 
 # C:\amiCOM\main.py: 12
-yfinance == 0.1.55
+yfinance == 0.1.68
